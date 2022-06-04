@@ -1,0 +1,419 @@
+---
+title: "Final-project"
+output: html_document
+date: '2022-05-28'
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(dplyr)
+library(randomForest)
+library(class)
+library(tree)
+library(gbm)
+library(caret)
+library(rpart.plot)
+library(rattle)
+library(knitr)
+library(fastAdaboost)
+library(ggpubr)
+library(MASS)
+library(kableExtra)
+library(corrplot)
+library(glmnet)
+library(faraway)
+library(ROCR)
+library(tune)
+library(LiblineaR)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 1 Introduction
+
+### 1.1 What is Airbnb?
+
+```{r}
+# knitr::include_graphics("airbnb.jpg")
+
+# library(vembedr)
+# embed_youtube("dA2F0qScxrI")
+
+```
+
+Airbnb is an American company that operates an online marketplace for lodging, primarily homestays for vacation rentals, and tourism activities. Based in San Francisco, California, the platform is accessible via website and mobile app. Airbnb does not own any of the listed properties; instead, it profits by receiving commission from each booking. Airbnb began in 2008 when two designers who had space to share hosted three travelers looking for a place to stay. Now, millions of hosts and travelers choose to create a free Airbnb account so they can list their space and book unique accommodations anywhere in the world. And Airbnb experience hosts share their passions and interests with both travelers and locals.
+
+
+
+### 1.2 The goal of this project
+
+
+Our goal is to predict the  New York City Airbnb listing prices
+
+
+and classification of a listing 
+
+being above or below the median price using various machine learning models.In the end, I want to select the models with lowest MSE.
+
+
+
+# 2 Loading the data 
+
+### 2.1 loading the data
+
+The dataset we will be using for our analysis is the dataset New York City Airbnb Open Data from Kaggle.
+
+```{r}
+bnb <- read_delim("AB_NYC_2019.csv", delim = ",") 
+```
+### 2.2 Check the dim and type of varibles
+
+```{r}
+dims <- dim(bnb)
+dims
+
+str(bnb)
+```
+
+There are 48895 observations and 16 predictors in BNB data.
+
+16 variables - 10 numeric, 6 categorical (date is currently a string but will be converted)
+
+
+* id - ID of listing
+
+* name - Name of listing
+
+* host_id - ID of the host
+
+* host_name - Name of the host
+
+* neighbourhood_group - Neighbourhood group name
+
+* neighbourhood - Neighbouthood area name
+
+* latitude - Latitude of the room
+
+* longitude - Longitude of the room
+
+* room_type - Type of room (Consist of 3 categories)
+
+* price - Price In Dollars
+
+* minimum_nights - Number of minimum nights allowed
+
+* number_of_reviews - Number of reviews about a particular room
+
+* last_review - Date on which last review was given
+
+* reviews_per_month - Its a ratio(no. of reviews/30)
+
+* callculated_host_listings_count - Amount of listing per host
+
+* availability_365 - Number of days in a year when bookings are available
+
+
+
+# 3 Data cleaning
+
+### 3.1 Drop useless variables
+
+We have some variables that don’t carry any useful information and hence wont’ be used in predictive models:
+
+* id - ID of listing
+* host_id - ID of the host
+* last_review - Date on which last review was given
+
+```{r}
+names_to_delete <- c("id", "host_id","last_review")
+bnb[names_to_delete] <- NULL
+```
+
+### 3.1 Checking missing variables
+
+```{r}
+sum(is.na(bnb))
+colSums(is.na(bnb))
+```
+We deal with the missing variables
+
+```{r}
+bnb <- bnb[(bnb$price!=0),]
+bnb[is.na(bnb$reviews_per_month),'reviews_per_month'] <- 0
+```
+
+Check the missing value again 
+```{r}
+colSums(is.na(bnb))
+sum(is.na(bnb))
+```
+
+We eliminate most of the missing values
+
+
+# 3 Exploratory Data Analysis
+
+
+# 3.1 Histogram of price 
+Since the price is our prime goal, we should show its Histogram
+
+```{r}
+ggplot(data = bnb, mapping = aes(x = price)) +
+         geom_histogram(bins = 50, size = 1.5) +
+         theme_minimal() +
+         ylab("Frequency") +
+         xlab("Price") +
+         ggtitle("Price Histogram") 
+```      
+From the graph, we can tell that distribution is very skewed. In this case , we should utilize the logarithmic transformation.
+
+
+
+```{r}
+ggplot(bnb, mapping = aes(x = price)) +
+        geom_histogram(bins = 50, aes(y = ..density..)) + 
+        geom_density(alpha = 0.2) +
+        ggtitle("Transformed distribution of price") +
+        scale_x_log10()
+```
+# 3.1 Histogram and Frequency Distribution of neighbourhood areas 
+```{r}
+fd_location <- data.frame(cbind(Frequency = table(bnb$neighbourhood_group), Percent = prop.table(table(bnb$neighbourhood_group)) * 100))
+fd_location <- freq_location[order(freq_location$Frequency),]
+fd_location
+```
+
+
+```{r}
+airbnb_nh <- bnb %>%
+    group_by(neighbourhood_group) %>%
+    summarise(price = round(mean(price), 2))
+
+
+ggplot(bnb, aes(price)) +
+    geom_histogram(bins = 50, aes(y = ..density..)) + 
+    geom_density(alpha = 0.2) +
+    ggtitle("Transformed distribution of price by neighbourhood groups",) +
+    facet_wrap(~neighbourhood_group) +
+    scale_x_log10() 
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+
+
+
+
+```{r}
+airbnb_cor <- bnb[, sapply(bnb, is.numeric)]
+airbnb_cor <- airbnb_cor[complete.cases(airbnb_cor), ]
+correlation_matrix <- cor(airbnb_cor, method = "spearman")
+corrplot(correlation_matrix, method = "color")
+```
+The color blue indicates whether the variables are positively correlated, the color red indicates the variables are negatively correlated, and white indicates that they are not correlated.
+
+
+```{r}
+
+```
+
+
+
+
+85% of Airbnb listings are located in Brooklyn and Manhattan, suggesting there is more demand for these boroughs especially since Brooklyn is the most populous borough and Manhattan is the center of NYC
+Most of the listings available in NYC are entire homes/apartments
+The most expensive listings based on average price tend to be entire homes in Manhattan (average price of $249) and Brooklyn (average price of $178)
+There does not seem to be a strong correlation between price and other variables such as minimum nights, number of reviews, reviews per month, and number of listings owned by hosts.
+
+
+# 4 Feature Extraction
+
+In this section, convert all categorical columns into numerical values.
+
+For the column `name`, as it is a column of natural language, it is processed to some columns indicating the occurrence of some keywords, including "large", "loft", "modern", "lux", "city", "country", "village".
+
+For all other categorical columns, use one-hot encoding to convert these columns into multiple indicator columns. For the columns `host_name`, `neighbourhood` and `neighbourhood_group`, as there are too many possible values, only the top 3 most common values are encoded differently, and the others are encoded as the same.
+
+```{r one hot}
+library(caret)
+top.host_name <- head(arrange(count(bnb, host_name), desc(n)), 3)
+top.neighbourhood <- head(arrange(count(bnb, neighbourhood), desc(n)), 3)
+top.neighbourhood_group <- head(arrange(count(bnb, neighbourhood_group), desc(n)), 3)
+# collect the occurrence of each key word in name column
+bnb.name <- bnb %>%
+  mutate(name = tolower(name)) %>%
+  mutate(
+    large = as.integer(grepl("large", name)),
+    loft = as.integer(grepl("loft", name)),
+    modern = as.integer(grepl("modern", name)),
+    lux = as.integer(grepl("lux", name)),
+    city = as.integer(grepl("city", name)),
+    country = as.integer(grepl("country", name)),
+    village = as.integer(grepl("village", name)),
+  )
+bnb.name$name <- NULL
+# only use top host_names
+bnb.other <- bnb.name %>%
+  mutate(
+    host_name = if_else(host_name %in% top.host_name$host_name, host_name, "Other"),
+    neighbourhood = if_else(neighbourhood %in% top.neighbourhood$neighbourhood, neighbourhood, "Other"),
+    neighbourhood_group = if_else(neighbourhood_group %in% top.neighbourhood_group$neighbourhood_group, neighbourhood_group, "Other")
+  )
+bnb.onehot <- predict(dummyVars("~ .", bnb.other), bnb.other)
+bnb.onehot <- as.data.frame(bnb.onehot)
+```
+
+After processed, there are 69 columns in total, except the target value, which is sensible to be used by machine learning models.
+
+```{r dimension}
+dim(bnb.onehot)
+```
+# 5 Data Splitting
+
+The data splitting process consists of two steps:
+
+1. split the total dataset into a training set and a test set. A large proportion of the data set is chosen as the test set because it takes too much time to train all the models if most data are used for training.
+2. On the training set, do stratified 5-fold split. It divides the training data into 5 shares. When tune the model, each share are taken as validation set for once and other data are used to train the model. The metrics along different folds are averaged to show the performance of a model with a setting of hyper-parameters.
+
+```{r split, warning=FALSE}
+library(tune)
+library(rsample)
+library(recipes)
+
+# bnb.onehot <- head(bnb.onehot, 100)
+
+train.test.split <- initial_split(bnb.onehot, prop = 0.8, strata = price)
+train <- training(train.test.split)
+test <- testing(train.test.split)
+cv <- vfold_cv(bnb.onehot, v = 5, strata = price)
+
+bnb.recipe <- recipe(price ~ ., data = train)
+dim(train)
+```
+
+# 6 Model Fitting
+
+## 6.1 Boosted Trees
+
+The first examined model is boosted tree. The implementation of xgboost is adopted. Xgboost approach repeatedly train decision trees to fill the gap between current predictions with the groud-truth target values.
+
+For xgboost, the parameter `mtry` is tuned to achieve the best performance. It controls the number of sampled predictors at each tree split.
+
+```{r boosted tree}
+library(parsnip)
+library(workflows)
+library(xgboost)
+bt.model <- boost_tree(mode = "regression", mtry = tune())
+bt.workflow <- workflow(bnb.recipe, bt.model)
+bt.tune <- tune_grid(bt.workflow, resamples = cv, grid = 5)
+collect_metrics(bt.tune)
+```
+Xgboost finally achieves RMSE 218. Below is the plot of its performance along with the value of `mtry`.
+
+```{r boosted tree plot}
+autoplot(bt.tune)
+```
+
+## 6.2 Linear regression
+
+Then linear regression is tested on the dataset. Linear regression fits a linear function which minimize the L2 loss on the training set. The backend engine is chosen as `glmnet`, as it provides both L1 (`mixture`) and L2 (`penalty`) penalty terms to tune. The weights of the two penalty terms are both tuned to achieve the best performance.
+
+```{r linear regression, warning=FALSE}
+library(parsnip)
+library(workflows)
+lm.model <- linear_reg(engine = "glmnet", penalty = tune(), mixture = tune())
+lm.workflow <- workflow(bnb.recipe, lm.model)
+lm.tune <- tune_grid(lm.workflow, resamples = cv, grid = 5)
+collect_metrics(lm.tune)
+```
+The penalty terms don't influence the performance a lot. All the parameters achieve about RMSE of 224. The RMSE metrics along with hyper-parameters are shown as below.
+
+```{r linear regression plot}
+autoplot(lm.tune)
+```
+
+## 6.3 Support Vector Machine
+
+The third model tuned is Support Vector Machine (SVM). SVM also fits a linear function to the training data. Though it tries to maximize the margin between data with different labels, instead of to minimize the L2 loss. For SVM model, `cost` and `margin` are tuned. `cost` weighs the cost of mis-predicted samples, while `margin` stands for the margin size of un-penalized region.
+
+```{r svm}
+library(parsnip)
+library(workflows)
+svm.model <- svm_linear(mode = "regression", cost = tune(), margin = tune())
+svm.workflow <- workflow(bnb.recipe, svm.model)
+svm.tune <- tune_grid(svm.workflow, resamples = cv, grid = 5)
+collect_metrics(svm.tune)
+```
+SVM achieves RMSE of about 236, which is worse than linear regression. Its performance along hyper-parameters are shown below.
+
+```{r svm plot}
+autoplot(svm.tune)
+```
+
+## 6.4 Neural Network (Multi-Layer Perceptron)
+
+The last model is neural network, more specifically, Multi-Layer Perceptron (MLP) model is used. It is a two-layer stack of linear layers, with a `ReLU` activation function in between. It is trained to minimize the L2 loss on the training set. For MLP model, the weight of L2 penalty term is tuned to achieve the best performance.
+
+```{r mlp}
+library(parsnip)
+library(workflows)
+mlp.model <- mlp(mode = "regression", penalty = tune())
+mlp.workflow <- workflow(bnb.recipe, mlp.model)
+mlp.tune <- tune_grid(mlp.workflow, resamples = cv, grid = 5)
+collect_metrics(mlp.tune)
+```
+
+The MLP model achieves RMSE of 233.2685, which is worse than simple linear regression. Its performance along with hyper-parameters is shown below.
+
+```{r mlp plot}
+autoplot(mlp.tune)
+```
+
+## 6.5 Model selection
+
+The performance of different tuned models are compared in the table below. It can be seen that the boosted tree, xgboost, achieves the best performance, i.e., the lowest RMSE. It achieves much better performance than all the other models.
+
+```{r model selection}
+bt.rmse <- min(filter(collect_metrics(bt.tune), .metric == "rmse")["mean"])
+lm.rmse <- min(filter(collect_metrics(lm.tune), .metric == "rmse")["mean"])
+svm.rmse <- min(filter(collect_metrics(svm.tune), .metric == "rmse")["mean"])
+mlp.rmse <- min(filter(collect_metrics(mlp.tune), .metric == "rmse")["mean"])
+model.metrics <- data.frame(
+  model = c("boosted tree", "linear regression", "svm", "neural network"),
+  best.RMSE = c(bt.rmse, lm.rmse, svm.rmse, mlp.rmse)
+)
+model.metrics
+```
+
+So, the boosted trees is chosen as the final model to be tested on the test set. Finally, the RMSE on the test set is calculated.
+
+```{r test best model}
+best.mtry <- arrange(filter(collect_metrics(bt.tune), .metric == "rmse"), mean)$mtry[1]
+best.model <- boost_tree(mode = "regression", mtry = best.mtry)
+best.workflow <- workflow(bnb.recipe, best.model)
+best.predictor <- fit(best.workflow, data = train)
+test$prediction <- predict(best.predictor, test)$.pred
+sqrt(mean((test$prediction - test$price) ** 2))
+```
+
+The final RMSE on the test set is 213.4986, which is worse than the performance on the validation set, according to the results of cross validation. It is expected because the hyper-parameter may over-fit to the validation set by choosing the best validation performance.
+
+# 7. Conclusion
+
+Among all the four tested models, the boosted tree performs the best, while the SVM model performs the most poorly. The results are as expected because boosted tree is much more representative than linear models including linear regression and SVM, and it achieves better performance by aggregating multiple basic tree models. SVM performs worse than linear regression as expected, because linear regression optimizes L2 loss directly, which matches the direction of RMSE metric. At last, MLP model achieves worse performance than linear regression. The reason could be the complexity of MLP model and thus it is over-fitted to the training set, compared to simple linear models.
+
+Generally, the chosen models could all make sensible predictions for the price predicting problem. Given the price range being from 0 to 10000, it is accurate to make a prediction with absolute error within 250. The value of RMSE indicates such scale of absolute errors.
+
+There are some work remain for next steps. They are listed below.
+
+- Explore more possible features. For now, the information of some features like `host_name` and `neighborhood` is highly compressed by only reckon a small part of their values. Maybe more information could be leveraged from them.
+- Process natural language in `name` column. It may be good to extract semantic information from texts using techniques like bag of words or recurrent neural networks.
+- Further tune the hyper-parameter of models. Due to the time limit, only a part of hyper-parameters are tuned, and only for a part of possible values. If given more time to tune the model, it may achieve better performance.
