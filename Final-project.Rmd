@@ -249,7 +249,7 @@ From the plot, we can tell the distribution of room type in each Neighborhood Gr
 airbnb_cor <- bnb[, sapply(bnb, is.numeric)]
 airbnb_cor <- airbnb_cor[complete.cases(airbnb_cor), ]
 correlation_matrix <- cor(airbnb_cor, method = "spearman")
-corrplot(correlation_matrix, method = "color", type ="lower")
+corrplot(correlation_matrix, method = "number", type ="lower")
 ```
 The color blue indicates whether the variables are positively correlated, the color red indicates the variables are negatively correlated, and white indicates that they are not correlated.
 
