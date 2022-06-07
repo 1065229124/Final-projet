@@ -38,7 +38,7 @@ knitr::opts_chunk$set(echo = TRUE,message = FALSE, warning = FALSE)
 ### 1.1 What is Airbnb?
 
 ```{r}
- knitr::include_graphics("airbnb.jpg")
+ knitr::include_graphics("./picture/airbnb.jpg")
  library(vembedr)
  embed_youtube("dA2F0qScxrI")
 ```
@@ -60,7 +60,7 @@ Our goal is to predict the  New York City Airbnb listing prices by using various
 The dataset we will be using for our analysis is the dataset New York City Airbnb Open Data from Kaggle.
 
 ```{r}
-bnb <- read_delim("AB_NYC_2019.csv", delim = ",") 
+bnb <- read_delim("./data/AB_NYC_2019.csv", delim = ",") 
 ```
 ### 2.2 Check the dim and type of varibles
 
