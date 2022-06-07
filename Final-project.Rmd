@@ -161,6 +161,7 @@ ggplot(data = bnb, mapping = aes(x = price)) +
          xlab("Price") +
          ggtitle("Price Histogram") 
 ```      
+
 From the graph, we can tell that distribution is very skewed. In this case , we should utilize the logarithmic transformation.
 
 
@@ -218,6 +219,7 @@ ggplot(bnb, aes(price)) +
 
 airbnb_nh_median
 ```
+
 From the graph, we can get that 85% of Airbnb listings are located in Brooklyn and Manhattan, which means that  there is more demand  since Brooklyn is the most populous neighbourhood and Manhattan is the center of NYC.
 
 
@@ -260,12 +262,14 @@ airbnb_cor <- airbnb_cor[complete.cases(airbnb_cor), ]
 correlation_matrix <- cor(airbnb_cor, method = "spearman")
 corrplot(correlation_matrix, method = "color", type ="lower",order = 'alphabet')
 ```
+
 The color blue indicates whether the variables are positively correlated, the color red indicates the variables are negatively correlated, and white indicates that they are not correlated. We can find a interesting relation that **price** has a strong negative relation to the **longitude**. We should take a further insight in this relationship 
 
 
 ```{r}
 ggplot(bnb,aes(x=longitude,y=latitude,color=neighbourhood_group,alpha=price))+geom_point() 
 ```
+
 From the plot, we can visualize the relation between **price**and**longitude**, we can tell that the neighborhood_group have higher mean price like Manhattan and Brooklyn are concentrated about -74.0 longitude, and as longitude increase,which is far away from these neighborhood_groups, the price will decrease.
 
 
