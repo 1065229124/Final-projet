@@ -131,7 +131,7 @@ bnb[names_to_delete] <- NULL
 sum(is.na(bnb))
 colSums(is.na(bnb))
 ```
-We deal with the missing variables
+From abrove, we can see we have 10089 missing values, We start to deal with the missing variables.
 
 ```{r}
 bnb <- bnb[(bnb$price!=0),]
@@ -144,7 +144,7 @@ colSums(is.na(bnb))
 sum(is.na(bnb))
 ```
 
-We eliminate most of the missing values
+After dealing with the missing value, we have 37 missing value left, we eliminate most of the missing values.But they are host_name, or name which will not affect the process of prediction.
 
 
 # 3 Exploratory Data Analysis
